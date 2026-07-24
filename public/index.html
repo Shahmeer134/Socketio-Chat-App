@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css">
+    <title>Chat App</title>
+   
+  </head>
+  <body>
+    <div class="chat-shell">
+      <header class="chat-header">
+        <div>
+          <p class="chat-header__title">Let's Chat</p>
+          <p class="chat-header__subtitle">Online</p>
+        </div>
+      </header>
+      <main class="chat-body">
+        <div id="messages" class="messages">
+          <div class="empty-state">
+            Start the conversation by sending a message.
+          </div>
+        </div>
+      </main>
+      <footer class="chat-footer">
+        <div class="input-row">
+          <input
+            id="message"
+            type="text"
+            placeholder="Type a message"
+            autocomplete="off"
+          />
+          <button id="sendBtn" type="button">Send</button>
+        </div>
+      </footer>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      const sendBtn = document.getElementById("sendBtn");
+      const messageInput = document.getElementById("message");
+      const allMessages = document.getElementById("messages");
+
+      const addMessage = (text, type = "incoming") => {
+        if (!text || !text.trim()) return;
+        const messageBubble = document.createElement("div");
+        messageBubble.className = `message ${type}`;
+        messageBubble.innerHTML = `${text}<small>${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small>`;
+
+        const emptyState = document.querySelector(".empty-state");
+        if (emptyState) emptyState.remove();
+
+        allMessages.appendChild(messageBubble);
+        allMessages.scrollTop = allMessages.scrollHeight;
+      };
+
+      socket.on("message", (message) => {
+        addMessage(message, "incoming");
+      });
+
+      const sendMessage = () => {
+        const message = messageInput.value.trim();
+        if (!message) return;
+        socket.emit("message", message);
+        addMessage(message, "outgoing");
+        messageInput.value = "";
+        messageInput.focus();
+      };
+
+      sendBtn.addEventListener("click", sendMessage);
+      messageInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          sendMessage();
+        }
+      });
+    </script>
+  </body>
+</html>
